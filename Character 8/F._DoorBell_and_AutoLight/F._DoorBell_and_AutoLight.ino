@@ -1,0 +1,146 @@
+//---------라이브러리들--------
+
+#include <Servo.h> 
+#include <time.h>
+#include <SoftwareSerial.h>
+
+//---------초기 선언들---------
+
+
+//입출력 핀들
+const int pin_Led = 8; //LED 제어할 핀
+const int pin_Servo = 9; //서보를 제어할 핀
+const int pin_Fan = 10; //선풍기를 제어할 핀
+const int pin_Heater = 11; //난로를 제어할 핀
+const int pin_yardLed = 12; //바깥의 LED를 제어할 핀
+const int pin_Buzzer = 13; //부저를 제어할 핀
+
+const int pin_BrightSensor = A0; //밝기 센서를 감지할 핀
+const int pin_Button = 7; //버튼을 감지할 핀
+const int pin_HeatSensor = A1; //온도 센서을 감지할 핀
+const int pin_MotionSensor = 6; //모션 센서을 감지할 핀
+const int pin_DoorBell = 5; //초인종을 감지할 핀
+
+//변수들
+int flag_led = LOW; //LED 제어 상태
+int value_bright = 0; //밝기 센서 감지 상태
+int angle_servo0 = 0; //서보 제어 상태
+float celcius_tempertue = 0; //온도 센서 감지 상태
+int flag_yardLed = LOW; //바깥의 LED 제어 상태
+
+int rate_time = 0; // 남은 시간
+int want_temp = 30; // 희망 온도
+
+//객체들
+Servo servo0;
+SoftwareSerial bluetooth0(2, 3);
+
+//---------기능 함수들---------
+
+//---------메인 함수들---------
+void setup() {
+  Serial.begin(9600);
+  bluetooth0.begin(9600);
+  //다음 핀들을 제어/감지 용도로 설정함
+  pinMode(pin_Led, OUTPUT); 
+  pinMode(pin_Fan, OUTPUT); 
+  pinMode(pin_Heater, OUTPUT); 
+  pinMode(pin_yardLed, OUTPUT); 
+  pinMode(pin_BrightSensor, INPUT); 
+  pinMode(pin_HeatSensor, INPUT); 
+  pinMode(pin_MotionSensor, INPUT); 
+  pinMode(pin_DoorBell, INPUT); 
+  servo0.attach(pin_Servo);
+}
+
+void loop() {
+
+  //LED들에게 현재 제어상태를 적용함
+  digitalWrite(pin_Led, flag_led); 
+  digitalWrite(pin_yardLed, flag_yardLed); 
+  
+  value_bright = analogRead(pin_BrightSensor);
+  //서보에게 현재 제어상태를 적용함
+  servo0.write(angle_servo0);
+
+  //알람을 1초 증가시킴
+  if (digitalRead(pin_Button) == HIGH)
+  {
+    while (digitalRead(pin_Button) == HIGH);
+    rate_time += 1000;
+  }
+
+  //버튼의 상태에따라 LED제어를 바꿈
+  if (value_bright < 150)
+  {
+    flag_led = HIGH;
+    angle_servo0 = 180;
+  }
+  else
+  {
+    flag_led = LOW;
+    angle_servo0 = 0;
+  }
+
+  //블루투스에서 값을 받음
+  while (bluetooth0.available())
+  {
+    String str = bluetooth0.readString();
+
+    if (str.startsWith("SetTemp"))
+    {
+      str = str.substring(8);
+      sscanf(str, "%d", &want_temp);
+      bluetooth0.printf("희망온도를 %d도로 설정했습니다.\n", want_temp);
+    }
+    else if (str.startsWith("GetTemp"))
+    {
+      bluetooth0.printf("희망온도는 %d입니다.\n", want_temp);
+    } 
+    else
+    {
+      bluetooth0.printf("알 수 없는 명령어 입니다.\n");
+    }
+    
+  }
+
+
+  //온도에 따라 선풍기와 난로를 제어
+  celcius_temperture = (analogRead(pin_HeatSensor) * 5 / 1024 - 0.5) * 100;
+  
+  if (celcius_tempertue <= want_temp - 3)
+  {
+    digitalWrite(pin_Fan, LOW); 
+    digitalWrite(pin_Heater, HIGH); 
+  }
+  else if (celcius_tempertue >= want_temp + 3)
+  {
+    digitalWrite(pin_Fan, HIGH); 
+    digitalWrite(pin_Heater, LOW); 
+  }
+  else
+  {
+    digitalWrite(pin_Fan, LOW); 
+    digitalWrite(pin_Heater, LOW); 
+  }
+
+
+
+  //모션 감지 상태에 따라 바깥의 LED제어
+  
+  if (digitalRead(pin_MotionSensor) == HIGH)
+  {
+    flag_yardLed = HIGH;
+  }
+  else
+  {
+    flag_yardLed = LOW;
+  }
+
+  //초인 종 상태에 따라 부저 제어
+  if (digitalRead(pin_DoorBell) == HIGH) tone(pin_Buzzer, 500, 1);
+  
+  delay(1);
+  if (rate_time > 0) rate_time -= 1;
+  
+}
