@@ -1,3 +1,4 @@
+//Original Code http://playground.arduino.cc/Main/DS1302
 
 #define DS1302_SCLK_PIN   6    // Arduino pin for the Serial Clock
 #define DS1302_IO_PIN     7    // Arduino pin for the Data I/O
@@ -249,8 +250,8 @@ void setup()
 
 
   Serial.begin(9600);
-  Serial.println(F("DS1302 Real Time Clock"));
-  Serial.println(F("Version 2, March 2013"));
+  Serial.println("DS1302 Real Time Clock");
+  Serial.println("Version 2, March 2013");
 
   DS1302_write (DS1302_ENABLE, 0);
 

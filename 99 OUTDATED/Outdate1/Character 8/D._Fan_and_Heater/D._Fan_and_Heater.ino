@@ -14,13 +14,13 @@ const int pin_Heater = 11; //난로를 제어할 핀
 
 const int pin_BrightSensor = A0; //밝기 센서를 감지할 핀
 const int pin_Button = 7; //버튼을 감지할 핀
-const int pin_HeatSensor = A1; //온도 센서을 감지할 핀
+const int pin_HeatSensor = A1; //온도 센서를 감지할 핀
 
 //변수들
 int flag_led = LOW; //LED 제어 상태
 int value_bright = 0; //밝기 센서 감지 상태
 int angle_servo0 = 0; //서보 제어 상태
-float celcius_tempertue = 0; //온도 센서 감지 상태
+float celcius_tempertue = 0; //현재 온도
 
 int rate_time = 0; // 남은 시간
 
